@@ -1,0 +1,53 @@
+Kotlin
+
+WebFlux 异步编程
+
+HiKariCP 光
+	FastStatementList 代替 ArrayList
+	无所集合 ConcurrentBag
+	代理类的优化（比如，用invokestatic代替了invokevirtual）
+
+	com.zaxxer.hikari.HikariDataSource
+
+Alibaba Druid
+	详细的监控
+	ExceptionSorter,针对主流数据库的返回码都有支持
+	SQL 防注入
+	内置加密配置
+	众多扩展点，方便进行定制
+
+	druid-spring-boot-starter
+	spring.datasource.druid.*
+
+开启事务注解的方式
+	1. @EnableTransactionManagement
+	2. <tx:annotation-driven/>
+
+
+Spring 针对数据库的错误码
+	通过SQLErrorCodeSQLExceptionTranslator 解析错误码
+
+	ErrorCode 定义
+		org/springframework/jdbc/support/sql-error-codes.xml
+		Classpath 下的 sql-error-codes.xml
+
+注入相关注解
+	@Autowired : 根据上下文按照类型查找注入
+	@Qualifier : 指定名字注入
+	@Resource : 根据名字查找
+
+Actuator 提供的一些好用的Endpoint
+	/actuator/health： 健康检查
+	/actuator/beans : 查看容器中的所有Bean
+	/actuator/mapping : 查看web的URL映射
+	/actuator/env : 查看环境信息
+
+慢SQL日志
+	系统属性配置
+		druid.stat.logSlowSql = true
+		druid.stat.slowSqlMillis = 3000
+	Spring Boot
+		spring.datasource.druid.filter.stat.enabled=true
+		spring.datasource.druid.filter.stat.log-slow-sql = true
+		spring.datasource.druid.filter.stat.slow-sql-millis = 3000
+

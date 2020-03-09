@@ -1,0 +1,65 @@
+面试总结
+1. java基础
+	== 和 equals
+	java 8 特性
+		lambda 表达式
+		stream 流式输出	串行流  parallelStream() 并行流
+	StringBuffer、StringBuilder、String
+		String 不可变
+		StringBuffer 线程安全
+		StringBuilder 线程不安全
+	运行时异常和非运行时异常
+		RuntimeException : NullPointerException、IndexOutBoundsException
+		IOException、SQLException
+	finalize
+		是Object类的一个方法，在垃圾收集器执行的时候会调用被回收对象的此方法，可以覆盖此方法提供垃圾收集时的其他资源回收，例如关闭文件等。JVM不保证此方法总被调用。
+	Collection 和 Collections
+		Collection 是集合类的上级接口，继承他的接口有Set和List、Queue
+		Collections是针对集合类的一个帮助类，它提供一系列的静态方法实现集合的搜索、排序、线程安全等操作
+	比较实现的接口
+		comparable: 只包含compareTo() 方法
+		comparator: compart() 和 equals()
+	Map、Set、List
+		Map: HashMap(无序)、TreeMap(有序)、LinkedHashMap(保存记录的插入顺序)
+			concurrentHashMap(并发，线程安全
+				1.7 segment分段锁
+				1.8 CAS + synchronized +Node)
+		List: ArrayList(底层数据结构是数组，线程不安全)
+			Vecotr(底层数据结构是数组，线程不安全)
+			LinkedList(底层数据结构是链表，线程安全)
+		Set: HashSet(底层数据结构是哈希表)
+			LinkedHashSet(底层数据结构是链表和哈希表，链表保证元素有序，哈希表保证元素唯一)
+			TreeSet(底层数据结构是红黑树)
+	HashMap和HashTable
+		HashTable: 线程安全
+		HashMap: 线程不安全。(数组+链表+红黑树)
+	线程池：
+		Executor接口
+		ExecutorService接口
+			newSingleThreadExecutor: 创建一个单线程的线程池
+			newFixedThreadPool: 创建一个固定大小的线程池
+			newCacheThreadPool: 创建一个可缓存的线程池
+			newScheduledThreadPool: 创建一个大小不限的线程池
+		ThreadPoolExecutor 线程池实现类
+			ThreadPoolExecutor(int corePoolSize,	//核心线程池大小
+								int maximumPoolSize,//最大线程池大小
+								long keepAliveTime,//线程最大空闲时间
+								TimeUnit unit,		//时间单位
+								BlockingQueue<Runable> workQueue,//线程等待队列
+								ThreadFactory threadFactory,	// 线程创建工厂
+								RejectedExecutionHandler handler)// 拒绝策略
+		Executors 线程池工具类
+
+
+	synchronized、lock、reentrantLock
+		synchronized:
+			对象锁: 修饰非静态方法、同步代码块(synchronized(this)和synchronized(非this对象))
+			类锁: 加锁静态方法，类锁的范围是整个实体类，即全局锁。(synchronized(类.class))
+
+	反射：
+		Class.forName: 在loadClass后必须初始化
+		ClassLoader.loadClass: 目标对象被装载后不进行链接,不会去执行该类静态块中的内容
+
+
+	
+

@@ -1,0 +1,151 @@
+配置静态ip
+
+配置hosts
+vi /etc/hosts
+配置本机的hostname到ip地址的映射
+192.168.3.xx  yongbor
+
+关闭防火墙
+service iptables stop
+service ip6tables stop
+chkconfig iptables off
+chkconfig ip6tables off
+
+vi /etc/selinux/config
+SELINUX=disabled
+
+关闭windows的防火墙
+-----------------------------------------
+配置yum
+yum clean all
+yum makecache
+yum install -y wget
+--------------------------------------------------
+安装java，perl
+安装jdk
+1. 将jdk-xxx-linux-xxx.rpm上传到虚拟机
+2. 安装JDK:rpm -ivh jdk-xxx-linux-xxx.rpm
+3. 配置jdk相关的环境变量
+vi .bashrc
+export JAVA_HOME=/usr/java/latest
+export PATH=$PATH:$JAVA_HOME/bin
+4. 测试jdk安装是否成功: java -version
+
+安装perl
+yum install -y gcc
+wget http://www.cpan.org/src/5.0/perl-5.16.1.tar.gz
+tar -xzf perl-5.16.1.tar.gz
+cd perl-5.16.1
+./Configure -des -Dprefix=/usr/local/perl
+make && make test && make install
+perl-v
+-------------------------------------------------
+
+配置4台CentOS为ssh免密码互相通信
+1. 首先再三台机器上配置对本机的ssh免密码登录
+ssh-keygen -t rsa
+生成本机的公钥，过程中不断敲回车即可，ssh-keygen命令默认会将公钥放在/root/.ssh目录下
+cd /root/.ssh
+cp id_rsa.pub authorized_keys
+将公钥复制为authorized_keys文件，此时使用ssh连接本机就不需要输入密码了
+2. 接着配置三台机器互相之间的ssh免密码登录
+使用ssh-copy-id -i hostname
+命令将本机的公钥拷贝到指定机器的authorized_keys文件中
+
+将authorized_keys文件拷贝到其它机器中（需先做完其它机器对本机的免密）
+scp authorized_keys hostname:/root/.ssh
+
+-----------------------------------------------
+redis安装
+安装单机版redis
+	(wget http://downloads.sourceforge.net/tcl/tcl8.6.1-src.tar.gz 安装过程中可能会需要此插件) 
+	tar -zvxf tcl8.6.1-src.tar.gz
+	cd /usr/local/tcl8.6.1/unix/
+	.configure
+	make && make install
+
+1. 官网下载压缩包
+2. tar -zvxf xxxxx.tar.gz
+3. cd redis-xxxx
+4. make && make test && make install
+
+redis生产环境启动方案
+1. reids utils目录下，有个redis_init_script脚本
+2. 将redis_int_script脚本拷贝到linux的/etc/init.d目录中，将redis_init_script重命名为redis_6379,6379是我们希望这个redis实例监听的端口号
+3. 修改redis_6379脚本的第6行的REDISPORT，设置为相同的端口号（默认就是6379）
+4. 创建两个目录：/etc/redis(存放redis的配置文件)，/var/redis/6379(存放redis的持久化文件)
+5. 修改redis配置文件（默认再根目录下，redis.conf）,拷贝到/etc/redis目录中,修改名称为6379.conf
+6. 修改6379.conf中的部分配置为生产环境
+daemonize	yes						让redis以daemon进程运行
+pidfile		/var/run/redis_6379.pid 设置redis的pid文件位置
+prot		6379					设置redis的监听端口号
+dir         /var/redis/6379			设置持久化文件的存储位置
+7. 启动redis，执行cd /etc/init.d,chmod 777 redis_6379, ./redis_6379 start
+8. 确认redis进程是否启动: ps -ef |grep redis
+9. 让redis跟随系统启动自动启动，
+在redis_6279脚本中，最上面，加入两行注释
+# chkconfig: 2345 90 10
+# description: Redis is a persistent key-value database
+chkconfig redis_6379 on
+
+redis cli 的使用
+1. redis-cli SHUTDOWN,连接本机的6379端口停止redis进程
+2. redis-cli -h 127.0.0.1 -p 6379 SHUTDOWN,指定连接的ip和端口号停止
+3. redis-cli PING,ping redis的端口，看是否正常
+4. redis-cli, 进入交互式命令行
+ set k1 v1 
+ get k1
+
+redis数据备份方案
+1. 写crontab定时调度脚本去做数据备份
+2. 每小时都copy一份rdb的备份，到一个目录中去，仅仅保留最近48小时的备份
+3. 每天都保留一份当日的rdb的备份，到一个目录中去，仅仅保留最近一个月的备份
+4. 每次copy备份的时候，都把太旧的备份给删了
+5. 每天晚上将当前服务器上所有的数据备份，发送一份到远程的云服务上去
+
+每小时copy一次备份，删除48小时前的数据
+vi redis_reb_copy_hourly.sh --创建文件
+chrom 777 redis_reb_copy_hourly.sh  --授权
+
+crontab -e 
+0 * * * * sh /usr/local/redis/copy/redis_reb_copy_hourly.sh
+
+#!/bin/sh
+cur_date=`date + %Y%m%d%k`
+rm -rf /usr/local/redis/snapshotting/$cur_date
+mkdir /usr/local/redis/snapshotting/$cur_date
+cp /var/redis/6379/dump.rdb /urs/local/redis/snapshotting/$cur_date
+
+del_date=`date -d -48hour + %Y%m%d%k`
+rm -rf /usr/local/redis/snapshotting/$del_date 
+
+
+每天copy备份
+cp redis_reb_copy_hourly.sh redis_reb_copy_daily.sh
+
+crontab -e 
+0 * * * * sh /usr/local/redis/copy/redis_reb_copy_hourly.sh  -- 设置每小时执行
+0 0 * * * sh /usr/local/redis/copy/redis_reb_copy_daily.sh  -- 设置每天执行
+
+#!/bin/sh
+cur_date=`date + %Y%m%d`
+rm -rf /usr/local/redis/snapshotting/$cur_date
+mkdir /usr/local/redis/snapshotting/$cur_date
+cp /var/redis/6379/dump.rdb /urs/local/redis/snapshotting/$cur_date
+
+del_date=`date -d -1month + %Y%m%d`
+rm -rf /usr/local/redis/snapshotting/$del_date 
+
+容灾恢复
+当从rdb文件恢复时，需先关闭掉aof备份，conf文件中的appendonly修改为no
+然后删除之前的aof备份文件
+恢复数据后，通过热修改，来更改appendonly配置
+config set appendonly yes 来备份aof文件
+但一般这样可能无法修改到配置文件中的值，所以，需要热备份完aof文件后，再次停掉redis，手动再将conf中的appendonly修改为yes，再次启动即可。
+
+----------------------------------------------------
+redis无磁盘化复制
+master在内存中直接创建rdb，然后发送给slave，不会在自己本地落地磁盘了。
+repl-diskless-sync
+repl-diskless-sync-delay, 等待一定时长再开始复制，因为要等更多slave重新连接过来
+
